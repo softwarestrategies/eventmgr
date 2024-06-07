@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: eventmgr-cassandra
+    ports:
+      - 9042:9042
+    volumes:
+      - ./docker-local-data/cassandra:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=local_cluster
