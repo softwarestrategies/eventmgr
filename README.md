@@ -2,34 +2,39 @@
 
 ## About
 
-A very simplistic E
+This is just a simple sample project to (re)learn working directly with Cassandra and also integrating a Spring Boot app with it.
 
+The system has some of what one might want in a system that tracks Devices and the Events occuring on those devices.  
 
-This is just a sample project to (re)learn integrating Spring Boot with a Cassandra database.  It is setup only for local dev work, but it wouldn't be hard to cloud-ize it.
+It is by no means comprehensive final pass for a real world system, but it does have enough to get there pretty quickly and will be something I use if there's a call for it.  Be gentle in your judgement of it all.
 
-It isn't an endall solution
+## Dependencies
 
-## Helpful Resources
+There are a few dependencies to consider, all of which can easily be changed to match your environment and/or preferences.
 
-https://towardsdatascience.com/when-to-use-cassandra-and-when-to-steer-clear-72b7f2cede76
-https://www.baeldung.com/cassandra-keys
-https://www.baeldung.com/cassandra-object-mapping-datastax-java-driver
-https://www.baeldung.com/spring-data-cassandra-dates
-https://medium.com/javarevisited/spring-data-with-apache-cassandra-database-composite-key-3c43a2dc7685
+First, I am using Java 21 and Spring Boot 3.3.  If you don't (or can't) use these, you can change the versions in the build.gradle file.  
 
-## Setup
+That being said - I also am using the new Spring Boot directive for using virtual threads.  It can be found in the application.properties file and can be removed:
 
-The Spring Boot app will expect Cassandra to be running & the schema setup.  So, from the command-line start it up:
+    spring.threads.virtual.enabled=true
+
+Also, you will want to have Gradle and Docker installed, though you can of course tweak it to use other means of testing it.
+
+## Setup Cassandra and the Data Model
+
+You will notice that there is a docker-compose.yml file in the root directory.  Some of the values found there can also be found correspondingly in the application's application.properties file.
+
+So, from the command-line start it up:
 
     ../eventmgr % docker-compose up -d
 
-Then you can see if it is running fine and even see the logs:
+Then you can see if the "eventmgr-cassandra" container is up-and-running and if you want see the logs from when it started up:
 
     ../eventmgr % docker ps
 
     ../eventmgr % docker logs eventmgr-cassandra
 
-Now log onto the Cassandra docker container:
+Now, log onto the Cassandra docker container:
 
     ../eventmgr % docker exec -it eventmgr-cassandra bash
 
@@ -39,7 +44,7 @@ The prompt should now reflect being root on the container.  And then go into Cas
 
     root@xxxxx:/# cqlsh
 
-Create a keyspace, create the table we will use and then see a list of all tables in the keyspace & also info on the table just created:
+Create a keyspace, switch focus to it and then create & populate the tables that can be used here:
 
     cqlsh> CREATE KEYSPACE eventmgr_keyspace WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 1};
 
@@ -84,6 +89,8 @@ Create a keyspace, create the table we will use and then see a list of all table
         INSERT INTO event (id, device_id, datetime, type, data)
         VALUES (2560476e-4264-4b4e-9243-2ec125b669d0, 4d6ed554-7074-481d-ba4b-993b599e2cc0, TOTIMESTAMP(now()), 'DOOR OPENED',  '{ "ACTOR": "SALLY", "METHOD": "KEY" }');
 
+If you want to see what tables are in the keyspace, want to see info on a specifice table, or want to query a table -- you can do the following:
+
     cqlsh:eventmgr_keyspace> DESC TABLES;
 
         event
@@ -96,12 +103,49 @@ Create a keyspace, create the table we will use and then see a list of all table
 
         < the above-inserted record should be listed >
 
-When done in the Cassandra instance, exit out back to the host's commandline.
+You can exit out of csqlsh and then ultimately the container by exiting a few times.  Don't stop the container itself yet, though.
 
-Finally, when all the dev work is done, the instance of Cassandra running should be shutdown:
+Now start up the Java application -- either from within your IDE or from the commandline.  From the OS commandline , you can do the following:
+
+    ../eventmgr % ./gradlew build
+
+    ../eventmgr % java -jar ./build/libs/eventmgr-0.0.1-SNAPSHOT.jar
+
+If it works, you should see a lot of log output and ultimately this line:
+
+    Tomcat started on port 8080 (http) with context path '/eventmgr'
+
+Using either curl or a tool like Postman, try hitting these endpoints with GET calls and you should see the data inserted above in Cassandra:
+
+    localhost:8080/eventmgr/api/v1/devices/4d6ed554-7074-481d-ba4b-993b599e2cc0
+
+    localhost:8080/eventmgr/api/v1/devices/location/BLDG A
+
+    localhost:8080/eventmgr/api/v1/events/device/a303d7ac-3d22-4964-aaee-26d7dbefad48
+
+AND for testing POST, use this (with the JSON in the request's body) and you should get a 201 response.  Then do a GET again with using the same deviceId as above & you should now see this new record:
+
+    localhost:8080/eventmgr/api/v1/events
+
+        {
+            "deviceId": "a303d7ac-3d22-4964-aaee-26d7dbefad48",
+            "type": "TEMP CHECKED",
+            "data": "{ \"TEMP\": 107.5 }"
+        }
+
+        localhost:8080/eventmgr/api/v1/events/device/a303d7ac-3d22-4964-aaee-26d7dbefad48
+
+You can now stop the Java application.  And if fully done, you should also stop the Cassandra container:
 
     ../mycassandra % docker-compose stop
 
+## Helpful Resources
+
+https://towardsdatascience.com/when-to-use-cassandra-and-when-to-steer-clear-72b7f2cede76
+https://www.baeldung.com/cassandra-keys
+https://www.baeldung.com/cassandra-object-mapping-datastax-java-driver
+https://www.baeldung.com/spring-data-cassandra-dates
+https://medium.com/javarevisited/spring-data-with-apache-cassandra-database-composite-key-3c43a2dc7685
 
 
 

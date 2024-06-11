@@ -36,3 +36,8 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+jar {
+    archiveBaseName = 'eventmgr'
+    archiveVersion = '1.0'
+}
