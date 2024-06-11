@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.cassandra.config.AbstractCassandraConfiguration;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.NonNullApi;
 
 @Configuration
 @EnableCassandraRepositories
@@ -13,7 +12,7 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
     @Override
     @NonNull
     protected String getKeyspaceName() {
-        return "event_keyspace";
+        return "eventmgr_keyspace";
     }
 
     @Override

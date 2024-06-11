@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Data files generated with docker-compose  ###
+docker-local-data/
